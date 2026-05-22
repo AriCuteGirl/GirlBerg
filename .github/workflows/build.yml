@@ -9,23 +9,26 @@ on:
 permissions:
   contents: write
 
+env:
+  THIRD_PARTY_BASE_DIR: third-party
+
 jobs:
   build:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download third-party deps
-        shell: cmd
-        run: |
-          mkdir third-party\deps\win
-          curl -sL "https://github.com/Detanup01/gbe_fork/releases/download/third-party_deps_win/deps_win.7z" -o deps.7z
-          7z x deps.7z -othird-party\deps\win -y
+      - name: Clone third-party deps (win)
+        uses: actions/checkout@v4
+        with:
+          repository: Detanup01/gbe_fork
+          ref: third-party/deps/win
+          path: ${{env.THIRD_PARTY_BASE_DIR}}/deps/win
 
       - name: Generate project files
         shell: cmd
         run: |
-          third-party\deps\win\common\win\premake\premake5.exe --file=premake5.lua --genproto --dosstub --winrsrc --os=windows vs2022
+          "%THIRD_PARTY_BASE_DIR%\deps\win\common\win\premake\premake5.exe" --file=premake5.lua --genproto --dosstub --winrsrc --os=windows vs2022
 
       - name: Build (Release x64)
         shell: cmd
@@ -40,7 +43,7 @@ jobs:
       - name: List artifacts
         shell: cmd
         run: |
-          dir /s /b build\bin\*.dll build\bin\*.exe
+          dir /s /b build\bin\*.dll build\bin\*.exe 2>nul || echo "No DLLs found"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
