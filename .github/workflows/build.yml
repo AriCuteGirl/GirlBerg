@@ -2,7 +2,7 @@ name: Build Windows
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     tags: ['v*']
   workflow_dispatch:
 
@@ -14,31 +14,39 @@ jobs:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
-      - name: Install premake5
+      - name: Download third-party deps
+        shell: cmd
         run: |
-          curl -sL https://github.com/premake/premake-core/releases/download/v5.0.0-beta5/premake-5.0.0-beta5-windows.zip -o premake.zip
-          7z x premake.zip -opremake-bin
-          echo "$PWD/premake-bin" >> $env:GITHUB_PATH
+          mkdir third-party\deps\win
+          curl -sL "https://github.com/Detanup01/gbe_fork/releases/download/third-party_deps_win/deps_win.7z" -o deps.7z
+          7z x deps.7z -othird-party\deps\win -y
 
       - name: Generate project files
-        run: premake5 vs2022
-
-      - name: Build (Release)
+        shell: cmd
         run: |
-          msbuild build/project/vs2022/x86_64/Goldberg-Emulator.sln /p:Configuration=Release /p:Platform=x64 /m
+          third-party\deps\win\common\win\premake\premake5.exe --file=premake5.lua --genproto --dosstub --winrsrc --os=windows vs2022
 
-      - name: Build (Debug)
+      - name: Build (Release x64)
+        shell: cmd
         run: |
-          msbuild build/project/vs2022/x86_64/Goldberg-Emulator.sln /p:Configuration=Debug /p:Platform=x64 /m
+          msbuild build\project\vs2022\x86_64\Goldberg-Emulator.sln /p:Configuration=Release /p:Platform=x64 /m
+
+      - name: Build (Debug x64)
+        shell: cmd
+        run: |
+          msbuild build\project\vs2022\x86_64\Goldberg-Emulator.sln /p:Configuration=Debug /p:Platform=x64 /m
+
+      - name: List artifacts
+        shell: cmd
+        run: |
+          dir /s /b build\bin\*.dll build\bin\*.exe
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: GirlBerg-x64
-          path: build/bin/**/*.dll
+          path: build/bin/**/*
           if-no-files-found: warn
 
       - name: Release
