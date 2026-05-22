@@ -17,8 +17,9 @@ jobs:
       - name: Checkout third-party deps (win)
         shell: cmd
         run: |
-          git clone --branch third-party/deps/win --depth 1 https://github.com/Detanup01/gbe_fork.git deps
-          dir deps\common\win\premake\premake5.exe || echo "PREMAKE NOT FOUND"
+          git clone --branch third-party/deps/win --depth 1 https://github.com/Detanup01/gbe_fork.git deps 2>&1
+          dir /s /b deps\*.exe 2>nul || echo "NO EXE FOUND"
+          if exist deps\common\win\premake\premake5.exe (echo PREMAKE FOUND) else (echo PREMAKE MISSING)
 
       - name: Generate project files
         shell: cmd
