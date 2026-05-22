@@ -14,40 +14,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Checkout third-party deps
-        uses: actions/checkout@v4
-        with:
-          repository: Detanup01/gbe_fork
-          ref: third-party/deps/win
-          path: deps
-
-      - name: Debug - list deps
+      - name: Checkout third-party deps (win)
         shell: cmd
         run: |
-          dir deps /s /b 2>nul | head -20 || echo "DEPS DIR EMPTY"
-          dir deps\common\win\premake\premake5.exe 2>nul || echo "PREMAKE NOT FOUND"
+          git clone --branch third-party/deps/win --depth 1 https://github.com/Detanup01/gbe_fork.git deps
+          dir deps\common\win\premake\premake5.exe || echo "PREMAKE NOT FOUND"
 
       - name: Generate project files
         shell: cmd
-        if: success()
         run: |
           deps\common\win\premake\premake5.exe --file=premake5.lua --genproto --dosstub --winrsrc --os=windows vs2022
 
       - name: Build Release x64
         shell: cmd
-        if: success()
         run: |
           msbuild build\project\vs2022\x86_64\Goldberg-Emulator.sln /p:Configuration=Release /p:Platform=x64 /m
 
       - name: Build Debug x64
         shell: cmd
-        if: success()
         run: |
           msbuild build\project\vs2022\x86_64\Goldberg-Emulator.sln /p:Configuration=Debug /p:Platform=x64 /m
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
-        if: success()
         with:
           name: GirlBerg-x64
           path: build\bin\**
